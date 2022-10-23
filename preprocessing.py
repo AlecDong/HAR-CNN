@@ -112,7 +112,3 @@ def data_loader(batch_size=64, shuffle=True, num_workers=0):
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     return train_loader, val_loader
 
-train_loader, val_loader = data_loader(1)
-for i in train_loader:
-    print(i["image"])
-    break
