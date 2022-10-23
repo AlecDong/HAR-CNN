@@ -70,6 +70,6 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
         train_loss[epoch] = total_train_loss / train_batches
         val_err[epoch] = total_val_err / val_iters
         val_loss[epoch] = total_val_loss / val_batches
-        print(f"Epoch {epoch}: Train err: {train_err[epoch]}% Val err: {val_err[epoch]}%")
+        print(f"Epoch {epoch}: Train err: {train_err[epoch]} Val err: {val_err[epoch]}")
 
 train(net)
