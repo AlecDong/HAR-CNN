@@ -31,7 +31,7 @@ class HARDataset(Dataset):
             idx = idx.tolist()
         
         image_name = os.path.join(self.img_dir, self.data[idx, 1])
-        img_classes = self.data[idx, 0]
+        img_classes = int(self.data[idx, 0])
         image = plt.imread(image_name)
         if self.transform:
             image = self.transform(image)
