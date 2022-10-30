@@ -12,6 +12,7 @@ class HARDataset(Dataset):
     """
     Custom dataset for HAR images that returns transformed image array and corresponding class
     """
+    
     def __init__(self, data, img_dir, transform=None):
         """
         Inputs:
@@ -102,7 +103,8 @@ def data_loader(batch_size=64, shuffle=True, num_workers=0):
     train_images, val_images = filename_loader()
 
     # normalize the pixel values to between 0 and 1 and crop to same size for DataLoader to work
-    transform = transforms.Compose([transforms.ToTensor(), transforms.Resize((150,150))])
+    transform = [transforms.ToTensor(), transforms.Resize((150,150))]
+    transform = transforms.Compose(transform)
     img_dir = os.path.join(os.path.dirname(__file__), 'Human Action Recognition', 'train')
 
     val_dataset = HARDataset(data=val_images, img_dir=img_dir, transform=transform)
