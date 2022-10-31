@@ -17,12 +17,8 @@ class CNN(nn.Module):
 
     def forward(self, x):
         x = self.alexnet(x).detach()
-        # x = x.view(-1, 256*3*3)
-        # x = self.dropout(self.relu(self.fc1(x)))
-        # x = self.dropout(self.relu(self.fc2(x)))
-        # x = self.dropout(self.relu(self.fc3(x)))
         x = x.view(-1, 256*6*6)
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
-        x = self.relu(self.fc3(x))
+        x = self.dropout(self.relu(self.fc1(x)))
+        x = self.dropout(self.relu(self.fc2(x)))
+        x = self.dropout(self.relu(self.fc3(x)))
         return self.fc4(x)

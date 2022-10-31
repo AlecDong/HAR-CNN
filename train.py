@@ -54,7 +54,8 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
             pred = softmax(outputs)
 
             # find error and loss for training data
-            total_train_err += (np.argmax(pred.detach(), 1) != labels).sum().item()
+            _, index = torch.max(pred.detach(), 1)
+            total_train_err += (index != labels).sum().item()
             total_train_loss += loss.item()
             train_iters += len(labels)
 
@@ -72,7 +73,8 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
             pred = softmax(outputs)
 
             # find error and loss for training data
-            total_val_err += (np.argmax(pred.detach(), 1) != labels).sum().item()
+            _, index = torch.max(pred.detach(), 1)
+            total_val_err += (index != labels).sum().item()
             total_val_loss += loss.item()
             val_iters += len(labels)
 
