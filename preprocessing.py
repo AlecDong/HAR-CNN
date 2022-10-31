@@ -28,14 +28,14 @@ class HARDataset(Dataset):
         return len(self.data)
     
     def __getitem__(self, idx):
-        if torch.torch.is_tensor(idx):
+        if torch.is_tensor(idx):
             idx = idx.tolist()
         
         image_name = os.path.join(self.img_dir, self.data[idx, 1])
         img_classes = int(self.data[idx, 0])
         image = plt.imread(image_name)
         if self.transform:
-            image = self.transform(image)
+            image = self.transform(np.array(image))
         sample = {'image': image, 'img_class': img_classes}
         return sample
 
