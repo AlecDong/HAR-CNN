@@ -32,11 +32,12 @@ class HARDataset(Dataset):
             idx = idx.tolist()
         
         image_name = os.path.join(self.img_dir, self.data[idx, 1])
-        img_classes = int(self.data[idx, 0])
+        img_class = int(self.data[idx, 0])
         image = plt.imread(image_name)
         if self.transform:
             image = self.transform(np.array(image))
-        sample = {'image': image, 'img_class': img_classes}
+        
+        sample = {'image': image, 'img_class': img_class}
         return sample
 
 def filename_loader():
