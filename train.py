@@ -54,7 +54,7 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
             pred = softmax(outputs)
 
             # find error and loss for training data
-            total_train_err += (np.argmax(pred.detach().cpu(), 1) != labels.cpu()).sum().item()
+            total_train_err += (np.argmax(pred.detach(), 1) != labels).sum().item()
             total_train_loss += loss.item()
             train_iters += len(labels)
 
@@ -72,7 +72,7 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
             pred = softmax(outputs)
 
             # find error and loss for training data
-            total_val_err += (np.argmax(pred.detach().cpu(), 1) != labels.cpu()).sum().item()
+            total_val_err += (np.argmax(pred.detach(), 1) != labels).sum().item()
             total_val_loss += loss.item()
             val_iters += len(labels)
 
@@ -92,7 +92,7 @@ def plot(train_err, train_loss, val_err, val_loss):
     ax1.plot(range(1,n+1), train_err, label="Train")
     ax1.plot(range(1,n+1), val_err, label="Validation")
     ax1.set_xlabel("Epoch")
-    ax1.set_ylabel("Loss")
+    ax1.set_ylabel("Error")
     ax1.legend(loc='best')
     ax1.xaxis.get_major_locator().set_params(integer=True)
     ax2.set_title("Train vs Validation Loss")

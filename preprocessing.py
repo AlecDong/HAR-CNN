@@ -104,7 +104,7 @@ def data_loader(batch_size=64, shuffle=True, num_workers=0):
     train_images, val_images = filename_loader()
 
     # normalize the pixel values to between 0 and 1 and crop to same size for DataLoader to work
-    transform = [transforms.ToTensor(), transforms.Resize((150,150))]
+    transform = [transforms.ToTensor(), transforms.Resize((224,224))]
     transform = transforms.Compose(transform)
     img_dir = os.path.join(os.path.dirname(__file__), 'Human Action Recognition', 'train')
 
