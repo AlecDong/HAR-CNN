@@ -52,10 +52,8 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
             optimizer.step()
 
             pred = softmax(outputs)
-
             # find error and loss for training data
-            _, index = torch.max(pred.detach(), 1)
-            total_train_err += (index != labels).sum().item()
+            total_val_err += (np.argmax(pred.detach().cpu(), 1) != np.argmax(labels.cpu(), 1)).sum().item()
             total_train_loss += loss.item()
             train_iters += len(labels)
 
@@ -73,8 +71,7 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
             pred = softmax(outputs)
 
             # find error and loss for training data
-            _, index = torch.max(pred.detach(), 1)
-            total_val_err += (index != labels).sum().item()
+            total_val_err += (np.argmax(pred.detach().cpu(), 1) != np.argmax(labels.cpu(), 1)).sum().item()
             total_val_loss += loss.item()
             val_iters += len(labels)
 
@@ -108,5 +105,5 @@ def plot(train_err, train_loss, val_err, val_loss):
 
 if __name__ == "__main__":
     net = CNN()
-    train_err, train_loss, val_err, val_loss = train(net, 512, 0.001, 20)
+    train_err, train_loss, val_err, val_loss = train(net, 64, 0.001, 20)
     plot(train_err, train_loss, val_err, val_loss)

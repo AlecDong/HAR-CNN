@@ -37,7 +37,9 @@ class HARDataset(Dataset):
         if self.transform:
             image = self.transform(np.array(image))
         
-        sample = {'image': image, 'img_class': img_class}
+        img_one_hot = torch.zeros(15)
+        img_one_hot[img_class] = 1
+        sample = {'image': image, 'img_class': img_one_hot}
         return sample
 
 def filename_loader():
