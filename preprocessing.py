@@ -1,7 +1,7 @@
 # Preprocessing images in our dataset
 import torch.nn.functional as F
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, ConcatDataset
 import pandas as pd
 import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
@@ -93,7 +93,6 @@ def filename_loader():
     
     for img_class, imgs in images.items():
         train_split = int(len(imgs) * 0.8) # 80/20 training/validation split for each class
-        np.random.shuffle(imgs)
         train_images += imgs[:train_split]
         val_images += imgs[train_split:]
 
@@ -113,7 +112,18 @@ def data_loader(batch_size=64, shuffle=True, num_workers=0):
     val_dataset = HARDataset(data=val_images, img_dir=img_dir, transform=transform)
     train_dataset = HARDataset(data=train_images, img_dir=img_dir, transform=transform)
 
+    transform_augment = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.RandomResizedCrop(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(degrees=(30,270)),
+        transforms.ToTensor(),
+        transforms.Resize((224,224))])
+    
+    train_dataset_augmented = HARDataset(data=train_images, img_dir=img_dir, transform=transform_augment)
+
+    train_dataset = ConcatDataset([train_dataset, train_dataset_augmented])
+
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     return train_loader, val_loader
-

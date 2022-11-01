@@ -17,7 +17,7 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
     
     # cross entropy loss function and adaptive moment estimation optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(net.parameters(), lr = 0.001)
+    optimizer = optim.AdamW(net.parameters(), lr = lr, weight_decay=0.1)
 
     # softmax for predictions
     softmax = nn.Softmax(dim = 1)
