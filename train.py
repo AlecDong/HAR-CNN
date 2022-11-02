@@ -109,7 +109,115 @@ def plot(train_err, train_loss, val_err, val_loss):
     ax2.xaxis.get_major_locator().set_params(integer=True)
     plt.show()
 
+def performance_per_class(net):
+    net.eval()
+    _, val_loader = data_loader(batch_size=1)
+    errors = {
+        0:0,
+        1:0,
+        2:0,
+        3:0,
+        4:0,
+        5:0,
+        6:0,
+        7:0,
+        8:0,
+        9:0,
+        10:0,
+        11:0,
+        12:0,
+        13:0,
+        14:0,
+    }
+    total = {
+        0:0,
+        1:0,
+        2:0,
+        3:0,
+        4:0,
+        5:0,
+        6:0,
+        7:0,
+        8:0,
+        9:0,
+        10:0,
+        11:0,
+        12:0,
+        13:0,
+        14:0,
+    }
+    wrong_guesses = {
+        0:0,
+        1:0,
+        2:0,
+        3:0,
+        4:0,
+        5:0,
+        6:0,
+        7:0,
+        8:0,
+        9:0,
+        10:0,
+        11:0,
+        12:0,
+        13:0,
+        14:0,
+    }
+    guesses = {
+        0:0,
+        1:0,
+        2:0,
+        3:0,
+        4:0,
+        5:0,
+        6:0,
+        7:0,
+        8:0,
+        9:0,
+        10:0,
+        11:0,
+        12:0,
+        13:0,
+        14:0,
+    }
+    softmax = nn.Softmax(dim = 1)
+    for batch in val_loader:
+        img, label = batch.values()
+        output = softmax(net(img))
+        pred = np.argmax(output.detach()).item()
+        truth = np.argmax(label).item()
+        if pred != truth:
+            errors[truth] += 1
+            wrong_guesses[pred] += 1
+        total[truth] += 1
+        guesses[pred] += 1
+    for i in range(15):
+        wrong_guesses[i] /= guesses[i]
+        errors[i] /= total[i]
+    return errors, wrong_guesses, guesses
+
 if __name__ == "__main__":
-    net = Baseline()
-    train_err, train_loss, val_err, val_loss = train(net, 64, 0.001, 20)
-    plot(train_err, train_loss, val_err, val_loss)
+    # net = Baseline()
+    # train_err, train_loss, val_err, val_loss = train(net, 64, 0.001, 20)
+    # plot(train_err, train_loss, val_err, val_loss)
+    net = CNN()
+    net.load_state_dict(torch.load("./models/bs256_lr0.0001_epoch12", map_location=torch.device('cpu')))
+    error_rate, wrong_guess_rate, guesses = performance_per_class(net)
+    print(error_rate)
+    print(wrong_guess_rate)
+    print(guesses)
+    plt.plot(error_rate.values())
+    plt.title("Error rates per class")
+    plt.xlabel("Class")
+    plt.ylabel("Error rate")
+    plt.show()
+    plt.plot(wrong_guess_rate.values())
+    plt.title("Wrong guess rate per class")
+    plt.xlabel("Class")
+    plt.ylabel("Wrong guess rate")
+    plt.show()
+    plt.plot(guesses.values())
+    plt.title("Guesses per class")
+    plt.xlabel("Class")
+    plt.ylabel("Number of guesses")
+    plt.show()
