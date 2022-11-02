@@ -1,6 +1,5 @@
 from preprocessing import data_loader
 from model import CNN
-from baseline import Baseline
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -201,23 +200,31 @@ if __name__ == "__main__":
     # train_err, train_loss, val_err, val_loss = train(net, 64, 0.001, 20)
     # plot(train_err, train_loss, val_err, val_loss)
     net = CNN()
-    net.load_state_dict(torch.load("./models/bs256_lr0.0001_epoch12", map_location=torch.device('cpu')))
-    error_rate, wrong_guess_rate, guesses = performance_per_class(net)
-    print(error_rate)
-    print(wrong_guess_rate)
-    print(guesses)
-    plt.plot(error_rate.values())
-    plt.title("Error rates per class")
-    plt.xlabel("Class")
-    plt.ylabel("Error rate")
-    plt.show()
-    plt.plot(wrong_guess_rate.values())
-    plt.title("Wrong guess rate per class")
-    plt.xlabel("Class")
-    plt.ylabel("Wrong guess rate")
-    plt.show()
-    plt.plot(guesses.values())
-    plt.title("Guesses per class")
-    plt.xlabel("Class")
-    plt.ylabel("Number of guesses")
-    plt.show()
+    net.load_state_dict(torch.load("./models/bs256_lr0.0001_epoch29", map_location=torch.device('cpu')))
+    # error_rate, wrong_guess_rate, guesses = performance_per_class(net)
+    # print(error_rate)
+    # print(wrong_guess_rate)
+    # print(guesses)
+    # x = np.array([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14])
+    # xtick = ["sitting", "using_laptop", "hugging", "sleeping", "drinking", "clapping", "dancing", "cycling",
+    #     "calling", "laughing", "eating", "fighting", "listening_to_music", "running", "texting"]
+    # plt.xticks(x, xtick, rotation=45)
+    # plt.plot(x, error_rate.values())
+    # plt.title("Error rates per class")
+    # plt.xlabel("Class")
+    # plt.ylabel("Error rate")
+    # plt.show()
+    # plt.xticks(x, xtick, rotation=45)
+    # plt.plot(x, wrong_guess_rate.values())
+    # plt.title("Wrong guess rate per class")
+    # plt.xlabel("Class")
+    # plt.ylabel("Wrong guess rate")
+    # plt.show()
+    # plt.xticks(x, xtick, rotation=45)
+    # plt.plot(x, guesses.values())
+    # plt.title("Guesses per class")
+    # plt.xlabel("Class")
+    # plt.ylabel("Number of guesses")
+    # plt.show()
+    from torchinfo import summary
+    summary(net, input_size=(256, 3, 224, 224))

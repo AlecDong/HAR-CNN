@@ -7,7 +7,7 @@ class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
         # Transfer learning from alexnet
-        self.alexnet = alexnet.features
+        self.alexnet = alexnet.features.requires_grad_(False)
         self.fc1 = nn.Linear(256*6*6, 128)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(0.3)
