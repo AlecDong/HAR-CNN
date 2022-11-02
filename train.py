@@ -1,5 +1,6 @@
 from preprocessing import data_loader
 from model import CNN
+from baseline import Baseline
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -81,6 +82,11 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
         val_err[epoch] = total_val_err / val_iters
         val_loss[epoch] = total_val_loss / val_batches
         print(f"Epoch {epoch}: Train err: {train_err[epoch]} Val err: {val_err[epoch]} Train loss: {train_loss[epoch]} Val loss: {val_loss[epoch]}")
+        # save model
+        model_path = "/models/bs{}_lr{}_epoch{}".format(batch_size,
+                                              lr,
+                                              epoch)
+        torch.save(net.state_dict(), model_path)
     return train_err, train_loss, val_err, val_loss
 
 def plot(train_err, train_loss, val_err, val_loss):
@@ -104,6 +110,6 @@ def plot(train_err, train_loss, val_err, val_loss):
     plt.show()
 
 if __name__ == "__main__":
-    net = CNN()
+    net = Baseline()
     train_err, train_loss, val_err, val_loss = train(net, 64, 0.001, 20)
     plot(train_err, train_loss, val_err, val_loss)

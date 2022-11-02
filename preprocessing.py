@@ -105,24 +105,32 @@ def data_loader(batch_size=64, shuffle=True, num_workers=0):
     train_images, val_images = filename_loader()
 
     # normalize the pixel values to between 0 and 1 and crop to same size for DataLoader to work
-    transform = [transforms.ToTensor(), transforms.Resize((224,224))]
-    transform = transforms.Compose(transform)
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Resize((224,224))])
     img_dir = os.path.join(os.path.dirname(__file__), 'Human Action Recognition', 'train')
 
     val_dataset = HARDataset(data=val_images, img_dir=img_dir, transform=transform)
     train_dataset = HARDataset(data=train_images, img_dir=img_dir, transform=transform)
 
-    transform_augment = transforms.Compose([
+    transform_flip = transforms.Compose([transforms.ToTensor(), transforms.RandomHorizontalFlip(p=1.0), transforms.Resize((224,224))])
+    train_dataset_flipped = HARDataset(data=train_images, img_dir=img_dir, transform=transform_flip)
+
+    transform_rotate_90 = transforms.Compose([transforms.ToTensor(), transforms.RandomRotation(degrees=(90,90)), transforms.Resize((224,224))])
+    train_dataset_rotated90 = HARDataset(data=train_images, img_dir=img_dir, transform=transform_rotate_90)
+
+    transform_rotate_180 = transforms.Compose([transforms.ToTensor(), transforms.RandomRotation(degrees=(180,180)), transforms.Resize((224,224))])
+    train_dataset_rotated180 = HARDataset(data=train_images, img_dir=img_dir, transform=transform_rotate_180)
+
+    transform_rotate_270 = transforms.Compose([transforms.ToTensor(), transforms.RandomRotation(degrees=(270,270)), transforms.Resize((224,224))])
+    train_dataset_rotated270 = HARDataset(data=train_images, img_dir=img_dir, transform=transform_rotate_270)
+
+    transform_random_crop = transforms.Compose([
         transforms.ToPILImage(),
         transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(degrees=(30,270)),
-        transforms.ToTensor(),
-        transforms.Resize((224,224))])
+        transforms.ToTensor()])
     
-    train_dataset_augmented = HARDataset(data=train_images, img_dir=img_dir, transform=transform_augment)
+    train_dataset_cropped = HARDataset(data=train_images, img_dir=img_dir, transform=transform_random_crop)
 
-    train_dataset = ConcatDataset([train_dataset, train_dataset_augmented])
+    train_dataset = ConcatDataset([train_dataset, train_dataset_flipped, train_dataset_rotated90, train_dataset_rotated180, train_dataset_rotated270, train_dataset_cropped])
 
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
