@@ -3,14 +3,14 @@ import torch.nn as nn
 import torchvision.models
 
 class CNN(nn.Module):
-    def __init__(self):
+    def __init__(self, fc1_out = 128, fc2_out = 32, dropout = 0.3):
         super(CNN, self).__init__()
         # Transfer learning from alexnet
-        self.fc1 = nn.Linear(256*6*6, 128)
+        self.fc1 = nn.Linear(256*6*6, fc1_out)
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.3)
-        self.fc2 = nn.Linear(128, 32)
-        self.fc3 = nn.Linear(32, 15)
+        self.dropout = nn.Dropout(dropout)
+        self.fc2 = nn.Linear(fc1_out, fc2_out)
+        self.fc3 = nn.Linear(fc2_out, 15)
 
     def forward(self, x):
         x = self.dropout(x).detach()
