@@ -5,6 +5,8 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
+
 
 def train(net, batch_size=32, lr=0.001, num_epochs=30):
     # Fixed PyTorch random seed for reproducible result
@@ -28,7 +30,7 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
     val_err = np.zeros(num_epochs)
     val_loss = np.zeros(num_epochs)
     
-    for epoch in range(num_epochs):
+    for epoch in tqdm((num_epochs)):
         total_train_loss = 0.0
         total_train_err = 0.0
         train_iters = 0
@@ -87,6 +89,69 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
                                               epoch)
         torch.save(net.state_dict(), model_path)
     return train_err, train_loss, val_err, val_loss
+
+def evaluation(net, batch_size=1024): # Evaluate the error/loss of a loaded model
+    # Fixed PyTorch random seed for reproducible result
+    torch.manual_seed(0)
+
+    if torch.cuda.is_available():
+        #print("cuda activated")
+        net = net.to('cuda')
+
+    train_loader, val_loader = data_loader(batch_size=batch_size)
+    
+    # cross entropy loss function
+    criterion = nn.CrossEntropyLoss()
+
+    # softmax for predictions
+    softmax = nn.Softmax(dim = 1)
+    
+    # initialize error and loss history
+    total_train_loss = 0.0
+    total_train_err = 0.0
+    train_iters = 0
+
+    total_val_loss = 0.0
+    total_val_err = 0.0
+    val_iters = 0
+
+    train_batches = 0
+    net.eval()
+    for batch in tqdm(train_loader):
+        train_batches += 1
+        imgs, labels = batch.values()
+        if torch.cuda.is_available():
+            imgs = imgs.to('cuda')
+            labels = labels.to('cuda')
+        outputs = net(imgs)
+        loss = criterion(outputs, labels)
+
+        pred = softmax(outputs)
+        # find error and loss for training data
+        total_train_err += (np.argmax(pred.detach().cpu(), 1) != np.argmax(labels.cpu(), 1)).sum().item()
+        print(total_train_err)
+        total_train_loss += loss.item()
+        train_iters += len(labels)
+
+    val_batches = 0
+    for batch in tqdm(val_loader):
+        val_batches += 1
+        imgs, labels = batch.values()
+        if torch.cuda.is_available():
+            imgs = imgs.to('cuda')
+            labels = labels.to('cuda')
+        outputs = net(imgs)
+        loss = criterion(outputs, labels)
+
+        pred = softmax(outputs)
+
+        # find error and loss for training data
+        total_val_err += (np.argmax(pred.detach().cpu(), 1) != np.argmax(labels.cpu(), 1)).sum().item()
+        total_val_loss += loss.item()
+        val_iters += len(labels)
+
+    return total_train_loss, total_train_err/len(train_loader), total_val_loss, total_val_err/len(val_loader)
+
 
 def plot(train_err, train_loss, val_err, val_loss):
     n = len(train_err) # number of epochs
@@ -200,31 +265,34 @@ if __name__ == "__main__":
     # train_err, train_loss, val_err, val_loss = train(net, 64, 0.001, 20)
     # plot(train_err, train_loss, val_err, val_loss)
     net = CNN()
-    net.load_state_dict(torch.load("./models/bs256_lr0.0001_epoch29", map_location=torch.device('cpu')))
-    # error_rate, wrong_guess_rate, guesses = performance_per_class(net)
-    # print(error_rate)
+    #net.load_state_dict(torch.load("./models/bs256_lr0.0001_epoch29", map_location=torch.device('cpu')))
+    #print(net)
+    train_err, train_loss, val_err, val_loss = train(net, 128, 0.0001, 29)
+    error_rate, wrong_guess_rate, guesses = performance_per_class(net)
+    # print("The error rate is:"+ str(error_rate))
     # print(wrong_guess_rate)
     # print(guesses)
-    # x = np.array([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14])
-    # xtick = ["sitting", "using_laptop", "hugging", "sleeping", "drinking", "clapping", "dancing", "cycling",
-    #     "calling", "laughing", "eating", "fighting", "listening_to_music", "running", "texting"]
-    # plt.xticks(x, xtick, rotation=45)
-    # plt.plot(x, error_rate.values())
-    # plt.title("Error rates per class")
-    # plt.xlabel("Class")
-    # plt.ylabel("Error rate")
-    # plt.show()
-    # plt.xticks(x, xtick, rotation=45)
-    # plt.plot(x, wrong_guess_rate.values())
-    # plt.title("Wrong guess rate per class")
-    # plt.xlabel("Class")
-    # plt.ylabel("Wrong guess rate")
-    # plt.show()
-    # plt.xticks(x, xtick, rotation=45)
-    # plt.plot(x, guesses.values())
-    # plt.title("Guesses per class")
-    # plt.xlabel("Class")
-    # plt.ylabel("Number of guesses")
-    # plt.show()
-    from torchinfo import summary
-    summary(net, input_size=(256, 3, 224, 224))
+    x = np.array([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14])
+    xtick = ["sitting", "using_laptop", "hugging", "sleeping", "drinking", "clapping", "dancing", "cycling",
+     "calling", "laughing", "eating", "fighting", "listening_to_music", "running", "texting"]
+    
+    plt.xticks(x, xtick, rotation=45)
+    plt.plot(x, error_rate.values())
+    plt.title("Error rates per class")
+    plt.xlabel("Class")
+    plt.ylabel("Error rate")
+    plt.show()
+    plt.xticks(x, xtick, rotation=45)
+    plt.plot(x, wrong_guess_rate.values())
+    plt.title("Wrong guess rate per class")
+    plt.xlabel("Class")
+    plt.ylabel("Wrong guess rate")
+    plt.show()
+    plt.xticks(x, xtick, rotation=45)
+    plt.plot(x, guesses.values())
+    plt.title("Guesses per class")
+    plt.xlabel("Class")
+    plt.ylabel("Number of guesses")
+    plt.show()
+    #from torchinfo import summary
+    #summary(net, input_size=(256, 3, 224, 224))
