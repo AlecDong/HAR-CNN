@@ -184,8 +184,6 @@ def test_filename_loader():
         if (data[1] in classes.keys()):
             img_class = classes[data[1]]
             images[img_class].append([img_class, data[0]])
-        else:
-            break
     
     for imgs in images.values():
         test_images += imgs
