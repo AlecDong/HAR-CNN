@@ -155,7 +155,6 @@ def data_loader(batch_size=64, shuffle=True, num_workers=0):
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     return train_loader, val_loader
 
-
 '''
 Create a new, complete dataset with all images (augmented data included) embedded with AlexNet weights in the form of np arrays.
 Using this new dataset for future training (with a new dataloader) should be significantly less time consuming compared to the 
@@ -187,3 +186,72 @@ def new_dataset(batch_size=1, dire = "alex_embedded_dataset"):
         np.save(f"{dire}/test/embed_{id}", imgs.numpy())
         np.save(f"{dire}/test/label_{id}", labels.numpy())
         id += 1
+
+def test_filename_loader():
+    """
+    Helper function that loads image file name and corresponding class from 'Human Action Recognition' folder
+    """
+    test = pd.read_csv(os.path.join(os.path.dirname(__file__), 'Human Action Recognition', 'Testing_set.csv'))
+
+    # one-hot encoding not needed for nn.CrossEntropyLoss()(x,y)
+    # y is the index for the class (0 to 14) and x is the output from the model without sigmoid (1x15 tensor)
+    classes = {
+        "sitting":0,
+        "using_laptop":1,
+        "hugging":2,
+        "sleeping":3,
+        "drinking":4,
+        "clapping":5,
+        "dancing":6,
+        "cycling":7,
+        "calling":8,
+        "laughing":9,
+        "eating":10,
+        "fighting":11,
+        "listening_to_music":12,
+        "running":13,
+        "texting":14,
+    }
+    images = {
+        0:[],
+        1:[],
+        2:[],
+        3:[],
+        4:[],
+        5:[],
+        6:[],
+        7:[],
+        8:[],
+        9:[],
+        10:[],
+        11:[],
+        12:[],
+        13:[],
+        14:[]
+    }
+    test_images = []
+
+    for _, data in test.iterrows():
+        if (data[1] in classes.keys()):
+            img_class = classes[data[1]]
+            images[img_class].append([img_class, data[0]])
+    
+    for imgs in images.values():
+        test_images += imgs
+
+    return test_images
+
+def test_data_loader(batch_size=64, shuffle=True, num_workers=0):
+    """
+    Returns DataLoader objects for train and validation data
+    """
+    test_images = test_filename_loader()
+
+    # normalize the pixel values to between 0 and 1 and crop to same size for DataLoader to work
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Resize((224, 224)), transforms.FiveCrop(150), transforms.Lambda(lambda crops: torch.stack([crop for crop in crops])), transforms.Resize((224, 224))])
+    img_dir = os.path.join(os.path.dirname(__file__), 'Human Action Recognition', 'test')
+
+    test_dataset = HARDataset(data=test_images, img_dir=img_dir, transform=transform)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+    return test_loader
+
