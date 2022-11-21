@@ -7,6 +7,10 @@ import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
 import numpy as np
 import os
+import torchvision
+from tqdm import tqdm
+
+alexnet = torchvision.models.alexnet(pretrained=True)
 
 class HARDataset(Dataset):
     """
@@ -23,6 +27,7 @@ class HARDataset(Dataset):
         self.data = np.array(data)
         self.img_dir = img_dir
         self.transform = transform
+        self.alexnet = alexnet.features.requires_grad_(False)
 
     def __len__(self):
         return len(self.data)
@@ -39,7 +44,7 @@ class HARDataset(Dataset):
         
         img_one_hot = torch.zeros(15)
         img_one_hot[img_class] = 1
-        sample = {'image': image, 'img_class': img_one_hot}
+        sample = {'image':  self.alexnet(image), 'img_class': img_one_hot}
         return sample
 
 def filename_loader():
@@ -130,11 +135,57 @@ def data_loader(batch_size=64, shuffle=True, num_workers=0):
     
     train_dataset_cropped = HARDataset(data=train_images, img_dir=img_dir, transform=transform_random_crop)
 
-    train_dataset = ConcatDataset([train_dataset, train_dataset_flipped, train_dataset_rotated90, train_dataset_rotated180, train_dataset_rotated270, train_dataset_cropped])
+    # Apply Gaussian Noise
+
+    class gaussian_noise(object): 
+        def __call__(self, image):
+            return image + torch.randn_like(image) * 0.1
+
+
+        def __repr__(self):
+            return self.__class__.__name__+'()'
+
+    
+    transform_gaussian_noise = transforms.Compose([transforms.ToTensor(), gaussian_noise(), transforms.Resize((224,224))])
+    train_dataset_noise = HARDataset(data=train_images, img_dir=img_dir, transform=transform_gaussian_noise)
+
+    train_dataset = ConcatDataset([train_dataset, train_dataset_flipped, train_dataset_rotated90, train_dataset_rotated180, train_dataset_rotated270, train_dataset_cropped, train_dataset_noise])
 
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     return train_loader, val_loader
+
+'''
+Create a new, complete dataset with all images (augmented data included) embedded with AlexNet weights in the form of np arrays.
+Using this new dataset for future training (with a new dataloader) should be significantly less time consuming compared to the 
+original method, since previously we made all original images iterating through AlexNet for every call on "class HARDataset()"
+while we are not updating weights in AlexNet in training (self.alexnet = alexnet.features.requires_grad_(False)). 
+
+Note: 
+1) Original dataloaders should be kept for baseline model validation.
+2) Pursuing this path should enable fast prototyping, which allows us to try out different hyperparameters.
+'''
+
+def new_dataset(batch_size=1, dire = "alex_embedded_dataset"):
+    # Fixed PyTorch random seed for reproducible result
+    torch.manual_seed(0)
+
+    train_loader, val_loader = data_loader(batch_size=batch_size, shuffle=False)
+    id=1
+    for batch in tqdm(train_loader):
+        imgs, labels = batch.values()
+        labels = torch.argmax(labels, dim=1)
+        np.save(f"{dire}/train/embed_{id}", imgs.numpy())
+        np.save(f"{dire}/train/label_{id}", labels.numpy())
+        id += 1
+        
+    id=1
+    for batch in tqdm(val_loader):
+        imgs, labels = batch.values()
+        labels = torch.argmax(labels, dim=1)
+        np.save(f"{dire}/test/embed_{id}", imgs.numpy())
+        np.save(f"{dire}/test/label_{id}", labels.numpy())
+        id += 1
 
 def test_filename_loader():
     """
@@ -203,3 +254,4 @@ def test_data_loader(batch_size=64, shuffle=True, num_workers=0):
     test_dataset = HARDataset(data=test_images, img_dir=img_dir, transform=transform)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     return test_loader
+
