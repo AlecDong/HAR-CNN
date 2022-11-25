@@ -108,9 +108,11 @@ def get_test_acc(net):
             total_test_acc += (np.argmax(pred.detach().cpu(), 1) == np.argmax(img_class.unsqueeze(0).cpu(), 1)).sum().item()
     return total_test_acc / num_images
 
-if __name__=="__main__":
-    from model import CNN
-    net = CNN()
-    net.load_state_dict(torch.load("./models/bs256_lr0.0001_epoch29", map_location=torch.device('cpu')))
-    print(get_test_acc(net))
-    print(count_classes())
+#if __name__=="__main__":
+#from model_new import CNN
+#net = CNN()
+#net.load_state_dict(torch.load("./models/bs256_lr0.0001_epoch29", map_location=torch.device('cpu')))
+#print(get_test_acc(net))
+#print(count_classes())
+show_test_images(8)
+print("1")

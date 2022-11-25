@@ -6,17 +6,28 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from preprocessing import AlexEmbed
+from torch.utils.data import DataLoader
+alexembed = AlexEmbed()
 
 
-def train(net, batch_size=32, lr=0.001, num_epochs=30):
+def loaders(dataset, split = 0.8, batch_size = 256):
+
+    train_size = int(split * len(dataset))
+    val_size = len(dataset) - train_size
+    train_set, val_set = torch.utils.data.random_split(dataset, [train_size, val_size])
+
+    train_loader = DataLoader(train_set, batch_size, shuffle=True)
+    val_loader = DataLoader(val_set, 1024, shuffle=True)
+    return train_loader, val_loader
+
+def train(net, train_loader, val_loader, batch_size=64, lr=0.001, num_epochs=30):
     # Fixed PyTorch random seed for reproducible result
     torch.manual_seed(0)
 
     if torch.cuda.is_available():
         net = net.cuda()
 
-    train_loader, val_loader = data_loader(batch_size=batch_size)
-    
     # cross entropy loss function and adaptive moment estimation optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.AdamW(net.parameters(), lr = lr, weight_decay=0.1)
@@ -30,7 +41,7 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
     val_err = np.zeros(num_epochs)
     val_loss = np.zeros(num_epochs)
     
-    for epoch in tqdm((num_epochs)):
+    for epoch in tqdm(range(num_epochs)):
         total_train_loss = 0.0
         total_train_err = 0.0
         train_iters = 0
@@ -54,8 +65,10 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
             optimizer.step()
 
             pred = softmax(outputs)
+            #print("debug1", pred.shape, labels.shape)
             # find error and loss for training data
-            total_train_err += (np.argmax(pred.detach().cpu(), 1) != np.argmax(labels.cpu(), 1)).sum().item()
+            #total_train_err += (np.argmax(pred.detach().cpu(), 1) != np.argmax(labels.cpu(), 1)).sum().item()
+            total_train_err += (np.argmax(pred.detach().cpu(), 1) != labels.cpu()).sum().item()
             total_train_loss += loss.item()
             train_iters += len(labels)
 
@@ -73,7 +86,7 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
             pred = softmax(outputs)
 
             # find error and loss for training data
-            total_val_err += (np.argmax(pred.detach().cpu(), 1) != np.argmax(labels.cpu(), 1)).sum().item()
+            total_val_err += (np.argmax(pred.detach().cpu(), 1) != labels.cpu()).sum().item()
             total_val_loss += loss.item()
             val_iters += len(labels)
 
@@ -84,7 +97,7 @@ def train(net, batch_size=32, lr=0.001, num_epochs=30):
         val_loss[epoch] = total_val_loss / val_batches
         print(f"Epoch {epoch}: Train err: {train_err[epoch]} Val err: {val_err[epoch]} Train loss: {train_loss[epoch]} Val loss: {val_loss[epoch]}")
         # save model
-        model_path = "/models/bs{}_lr{}_epoch{}".format(batch_size,
+        model_path = "bs{}_lr{}_epoch{}".format(batch_size,
                                               lr,
                                               epoch)
         torch.save(net.state_dict(), model_path)
@@ -174,8 +187,13 @@ def plot(train_err, train_loss, val_err, val_loss):
     plt.show()
 
 def performance_per_class(net):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    
+    net = net.to(device)
     net.eval()
     _, val_loader = data_loader(batch_size=1)
+
+    
     errors = {
         0:0,
         1:0,
@@ -244,31 +262,47 @@ def performance_per_class(net):
         13:0,
         14:0,
     }
+    
+    
     softmax = nn.Softmax(dim = 1)
     for batch in val_loader:
         img, label = batch.values()
+        if torch.cuda.is_available():
+                img = img.to('cuda')
+                label = label.to('cuda')
+        
+        
+
         output = softmax(net(img))
-        pred = np.argmax(output.detach()).item()
-        truth = np.argmax(label).item()
+
+        pred = np.argmax(output.detach().cpu()).item()
+        #print(pred)
+        truth = np.argmax(label.cpu()).item()
         if pred != truth:
             errors[truth] += 1
             wrong_guesses[pred] += 1
         total[truth] += 1
         guesses[pred] += 1
     for i in range(15):
-        wrong_guesses[i] /= guesses[i]
-        errors[i] /= total[i]
+        if guesses[i] == 0:
+            wrong_guesses[i] = guesses[i]
+        else: 
+            wrong_guesses[i] /= guesses[i]
+        if total[i] == 0:
+            errors[i] = 0
+        else:
+            errors[i] /= total[i]
     return errors, wrong_guesses, guesses
 
 if __name__ == "__main__":
     # net = Baseline()
     # train_err, train_loss, val_err, val_loss = train(net, 64, 0.001, 20)
     # plot(train_err, train_loss, val_err, val_loss)
-    net = CNN()
+    #net = CNN()
     #net.load_state_dict(torch.load("./models/bs256_lr0.0001_epoch29", map_location=torch.device('cpu')))
     #print(net)
-    train_err, train_loss, val_err, val_loss = train(net, 128, 0.0001, 29)
-    error_rate, wrong_guess_rate, guesses = performance_per_class(net)
+    #train_err, train_loss, val_err, val_loss = train(net, 128, 0.0001, 29)
+    #error_rate, wrong_guess_rate, guesses = performance_per_class(net)
     # print("The error rate is:"+ str(error_rate))
     # print(wrong_guess_rate)
     # print(guesses)

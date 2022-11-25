@@ -158,33 +158,28 @@ def data_loader(batch_size=64, shuffle=True, num_workers=0):
 '''
 Create a new, complete dataset with all images (augmented data included) embedded with AlexNet weights in the form of np arrays.
 Using this new dataset for future training (with a new dataloader) should be significantly less time consuming compared to the 
-original method, since previously we made all original images iterating through AlexNet for every call on "class HARDataset()"
-while we are not updating weights in AlexNet in training (self.alexnet = alexnet.features.requires_grad_(False)). 
+original method. 
 
-Note: 
-1) Original dataloaders should be kept for baseline model validation.
-2) Pursuing this path should enable fast prototyping, which allows us to try out different hyperparameters.
 '''
 
-def new_dataset(batch_size=1, dire = "alex_embedded_dataset"):
+def new_dataset(batch_size=1, dire = "alex_embedding_set"):
     # Fixed PyTorch random seed for reproducible result
     torch.manual_seed(0)
 
     train_loader, val_loader = data_loader(batch_size=batch_size, shuffle=False)
-    id=1
+    id=0
     for batch in tqdm(train_loader):
         imgs, labels = batch.values()
         labels = torch.argmax(labels, dim=1)
-        np.save(f"{dire}/train/embed_{id}", imgs.numpy())
-        np.save(f"{dire}/train/label_{id}", labels.numpy())
+        np.save(f"{dire}/embed_{id}", imgs.numpy())
+        np.save(f"{dire}/label_{id}", labels.numpy())
         id += 1
-        
-    id=1
+    
     for batch in tqdm(val_loader):
         imgs, labels = batch.values()
         labels = torch.argmax(labels, dim=1)
-        np.save(f"{dire}/test/embed_{id}", imgs.numpy())
-        np.save(f"{dire}/test/label_{id}", labels.numpy())
+        np.save(f"{dire}/embed_{id}", imgs.numpy())
+        np.save(f"{dire}/label_{id}", labels.numpy())
         id += 1
 
 def test_filename_loader():
@@ -255,3 +250,69 @@ def test_data_loader(batch_size=64, shuffle=True, num_workers=0):
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     return test_loader
 
+
+class AlexEmbed(Dataset):
+    """Face Landmarks dataset."""
+
+    def __init__(self, length = 70560, root_dir='', transform=None):
+        """
+        Args:
+            csv_file (string): Path to the csv file with annotations.
+            root_dir (string): Directory with all the images.
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+        self.length = length
+        self.root_dir = root_dir
+        self.transform = transform
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        image = np.load(self.root_dir+f"alex_embedding_set/embed_{idx}.npy")
+        label = np.load(self.root_dir+f"alex_embedding_set/label_{idx}.npy")
+
+        sample = {'image': image, 'label': np.squeeze(label)}
+
+        if self.transform:
+            sample = self.transform(sample)
+
+        return sample
+
+class AlexEmbed_test(Dataset):
+    """Face Landmarks dataset."""
+
+    def __init__(self, length = 207, root_dir='', transform=None):
+        """
+        Args:
+            csv_file (string): Path to the csv file with annotations.
+            root_dir (string): Directory with all the images.
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+        self.length = length
+        self.root_dir = root_dir
+        self.transform = transform
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        
+
+        cur_dir = os.getcwd()
+        image = np.load(cur_dir+f"/testset/embed_{idx}.npy")
+        label = np.load(cur_dir+f"/testset/label_{idx}.npy")
+        
+        sample = {'image': image, 'label': np.squeeze(label)}
+
+        if self.transform:
+            sample = self.transform(sample)
+
+        return sample
